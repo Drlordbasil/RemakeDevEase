@@ -37,7 +37,12 @@ class TaskList(QWidget):
             print(f"Added task: {task}")
         else:
             print("No task entered.")
-
+    def update_task_list(self, tasks):
+        self.task_list.clear()
+        for task in tasks:
+            item = QListWidgetItem(task)
+            self.task_list.addItem(item)
+        print(f"Updated task list with {len(tasks)} tasks.")
     def remove_task(self):
         current_item = self.task_list.currentItem()
         if current_item:
@@ -47,6 +52,9 @@ class TaskList(QWidget):
             self.task_list.takeItem(row)
             mark_tasks_as_done(self.conn, self.cursor, task_id)
             print(f"Removed task: {task_text}")
+            #update the task list
+            self.load_tasks_from_database()
+            
         else:
             print("No task selected.")
 
