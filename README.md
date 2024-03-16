@@ -1,1 +1,1 @@
-![image](https://github.com/Drlordbasil/RemakeDevEase/assets/126736516/0a23d73e-bbb2-49dc-bf32-a909244e377a)
+![image](https://github.com/Drlordbasil/RemakeDevEase/assets/126736516/438467d4-03d4-4328-aafc-a6b6dc218ee3)
