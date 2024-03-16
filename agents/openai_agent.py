@@ -4,90 +4,105 @@ import re
 
 class OpenAIAgent(BaseAgent):
     def __init__(self, browser, terminal, task_list, code_editor):
-        super().__init__()  # Call the __init__ method of the parent class (BaseAgent)
+        super().__init__()
         self.browser = browser
         self.terminal = terminal
         self.task_list = task_list
         self.code_editor = code_editor
-
+        self.action_handlers = {
+            "clear": self.action_clear,
+            "exit": self.action_exit,
+            "open website": self.action_open_website,
+            "run command": self.action_run_command,
+            "add task": self.action_add_task,
+            "write code": self.action_write_code,
+            "check browser": self.action_check_browser
+        }
 
     def process_input(self, user_input):
-        # Add the user input to the conversation history
+        action_detected = False
+        for action in ["clear", "exit", "open website", "research", "look up", "run command", "add task", "write code", "check browser"]:
+            if action in user_input.lower():
+                self.execute_action(user_input)
+                action_detected = True
+                break
+        if action_detected:
+            return
         self.conversation_history.append(f"User: {user_input}")
-        
-        # Check if the user input is a task assignment
         if user_input.lower().startswith("task:"):
             self.current_task = user_input[5:].strip()
-            self.conversation_history.append(f"Assistant: Understood. The current task is: {self.current_task}")
+            self.conversation_history.append(f"Assistant: Understood. The current task is: {self.current_task}. I'll break it into smaller manageable tasks for myself. When I do the tasks I'll do 1 task per response.")
         else:
-            # If there is a current task, add it to the context
-            if self.current_task:
-                context = f"Current Task: {self.current_task}\n\n"
-            else:
-                context = ""
-
-            # Add the loaded knowledge base to the context
+            context = f"Current Task: {self.current_task}\n\n" if self.current_task else ""
             if self.knowledge_base:
                 knowledge_base_context = "\n".join([f"{key}: {value}" for key, value in self.knowledge_base.items()])
                 context += f"Knowledge Base:\n{knowledge_base_context}\n\n"
-
-            # Add the current task list to the context
             task_list_context = "\n".join([f"Task {i+1}: {task}" for i, task in enumerate(self.get_task_list())])
             context += f"Task List:\n{task_list_context}\n\n"
-
-            # Add the conversation history to the context
             context += "\n".join(self.conversation_history[-5:])
-
-            # Call the OpenAI API to process the user input
             response = self.api.api_calls(user_input, context)
-
-            # Add the assistant's response to the conversation history
             self.conversation_history.append(f"Assistant: {response}")
 
     def generate_response(self):
         if self.conversation_history:
-            return self.conversation_history[-1][11:]  # Extract the assistant's response
+            return self.conversation_history[-1][11:]
         else:
             return "I'm ready to assist you. Please provide me with a task or query."
 
     def execute_action(self, action):
-        # Execute the action based on the generated response
-        if action.lower() == "clear":
-            self.conversation_history = []
-            self.current_task = None
-        elif action.lower() == "exit":
-            print("Exiting the program...")
-            exit()
+        for keyword, handler in self.action_handlers.items():
+            if keyword in action:
+                handler(action)
+                return
+        print("No valid action found for:", action)
+
+    def action_clear(self, action):
+        self.conversation_history = []
+        self.current_task = None
+        print("Conversation history and current task cleared.")
+
+    def action_exit(self, action):
+        print("Exiting the program...")
+        exit()
+
+    def action_open_website(self, action):
+        url = self.extract_url_from_action(action)
+        if url:
+            self.browser.navigate_to(url)
+            print("Navigated to URL:", url)
         else:
-            print(f"Executing action: {action}")
+            print("No valid URL found in action:", action)
+
+    def action_run_command(self, action):
+        command = self.extract_command_from_action(action)
+        if command:
+            self.terminal.execute_command(command)
+            print("Executed command:", command)
+        else:
+            print("No valid command found in action:", action)
+
+    def action_add_task(self, action):
+        task = self.extract_task_from_action(action)
+        if task:
+            self.task_list.add_task(task)
             
-            if "open website" or "research" or "look up" in action.lower():
-                url = self.extract_url_from_action(action)
-                if url:
-                    self.browser.navigate_to(url)
-                else:
-                    print("No valid URL found in the action.")
-            
-            elif "run command" in action.lower():
-                command = self.extract_command_from_action(action)
-                if command:
-                    self.terminal.execute_command(command)
-                else:
-                    print("No valid command found in the action.")
-            
-            elif "add task" in action.lower():
-                task = self.extract_task_from_action(action)
-                if task:
-                    self.task_list.add_task(task)
-                else:
-                    print("No valid task found in the action.")
-            
-            elif "write code" in action.lower():
-                code = self.extract_code_from_action(action)
-                if code:
-                    self.code_editor.set_code(code)
-                else:
-                    print("No valid code found in the action.")
+            print("Added task:", task)
+        else:
+            print("No valid task found in action:", action)
+
+    def action_write_code(self, action):
+        code = self.extract_code_from_action(action)
+        if code:
+            self.code_editor.set_code(code)
+            print("Code written to editor.")
+        else:
+            print("No valid code found in action:", action)
+
+    def action_check_browser(self, action):
+        current_url = self.browser.get_current_url()
+        page_source = self.browser.scrape_page()
+        print("Current URL:", current_url)
+        print("Page source length:", len(page_source))
 
     def extract_url_from_action(self, action):
         url_pattern = re.compile(r'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\\(\\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+')

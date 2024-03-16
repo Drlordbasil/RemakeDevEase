@@ -34,6 +34,7 @@ class TaskList(QWidget):
             self.task_list.addItem(item)
             self.task_input.clear()
             add_task(self.conn, task)
+            self.load_tasks_from_database()
             print(f"Added task: {task}")
         else:
             print("No task entered.")

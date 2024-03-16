@@ -53,10 +53,8 @@ class OpenAIAPI:
         
         relevant_history = self._get_relevant_history(user_message)
         
-        messages = [{"role": "system", "content": "You are a superintelligent being with perfect reasoning and planning and logic." + sys_message}, {"role": "user", "content": user_message}]
+        messages = [{"role": "system", "content": "You are a superintelligent being with perfect reasoning and planning and logic. You only do 1 task per response with your tools: web browser, shell commands, or task lists." + sys_message}, {"role": "user", "content": user_message}]
         
-        if code_context:
-            messages.insert(1, {"role": "system", "content": f"Code Context:\n{code_context}"})
         
         messages.extend([{"role": role, "content": entry[role + '_message']} for entry in relevant_history for role in ["system", "user"] if role + '_message' in entry])
         
