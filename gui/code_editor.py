@@ -25,14 +25,12 @@ class PythonHighlighter(QSyntaxHighlighter):
     def highlightBlock(self, text):
         for pattern, format in self.highlightingRules:
             expression = QRegularExpression(pattern)
-            match = expression.match(text)
-            index = match.hasMatch()
-            while index >= 0:
-                match = expression.match(text)
+            match_iterator = expression.globalMatch(text)
+            while match_iterator.hasNext():
+                match = match_iterator.next()
+                index = match.capturedStart()
                 length = match.capturedLength()
                 self.setFormat(index, length, format)
-                match = expression.match(text, index + length)
-                index = match.hasMatch()
 
 class CodeEditor(QWidget):
     def __init__(self):

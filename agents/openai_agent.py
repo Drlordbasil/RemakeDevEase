@@ -14,7 +14,7 @@ class OpenAIAgent(BaseAgent):
     def process_input(self, user_input):
         # Add the user input to the conversation history
         self.conversation_history.append(f"User: {user_input}")
-
+        
         # Check if the user input is a task assignment
         if user_input.lower().startswith("task:"):
             self.current_task = user_input[5:].strip()
