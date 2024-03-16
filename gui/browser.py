@@ -39,3 +39,7 @@ class Browser(QWidget):
         
     def search_text(self, text):
         self.web_view.page().findText(text)
+    def scrape_page(self):
+        self.get_page_source()
+        self.execute_script("document.documentElement.outerHTML")
+        return self.page_source

@@ -1,5 +1,6 @@
 from PyQt5.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QTextEdit, QLineEdit, QPushButton
 from PyQt5.QtCore import Qt
+from agents.openai_agent import OpenAIAgent
 from gui.browser import Browser
 from gui.terminal import Terminal
 from gui.task_list import TaskList
@@ -8,7 +9,12 @@ from gui.code_editor import CodeEditor
 class MainWindow(QMainWindow):
     def __init__(self, agent):
         super().__init__()
-        self.agent = agent
+        self.browser = Browser()
+        self.terminal = Terminal()
+        self.task_list = TaskList()
+        self.code_editor = CodeEditor()
+        
+        self.agent = OpenAIAgent(self.browser, self.terminal, self.task_list, self.code_editor)
         self.setWindowTitle("AI-Assisted Development Environment")
         
         # Create the central widget and layout
