@@ -37,16 +37,19 @@ class TaskList(QWidget):
             print("No task entered.")
 
     def remove_task(self, task_text):
-        items = self.task_list.findItems(task_text, Qt.MatchExactly)
-        if items:
-            row = self.task_list.row(items[0])
-            task_id = self.task_list.item(row).data(Qt.UserRole)
-            self.task_list.takeItem(row)
-            mark_tasks_as_done(self.conn, self.cursor, task_id)
-            print(f"Removed task: {task_text}")
-            self.load_tasks_from_database()
+        if isinstance(task_text, str):
+            items = self.task_list.findItems(task_text, Qt.MatchExactly)
+            if items:
+                row = self.task_list.row(items[0])
+                task_id = self.task_list.item(row).data(Qt.UserRole)
+                self.task_list.takeItem(row)
+                mark_tasks_as_done(self.conn, self.cursor, task_id)
+                print(f"Removed task: {task_text}")
+                self.load_tasks_from_database()
+            else:
+                print(f"Task '{task_text}' not found in the task list.")
         else:
-            print(f"Task '{task_text}' not found in the task list.")
+            print(f"Invalid task_text type. Expected str, but got {type(task_text)}.")
 
     def load_tasks_from_database(self):
         self.task_list.clear()
@@ -61,6 +64,7 @@ class TaskList(QWidget):
         tasks = []
         for i in range(self.task_list.count()):
             tasks.append(self.task_list.item(i).text())
+        print(f"Retrieved tasks from task list: {tasks}")
         return tasks
 
     def closeEvent(self, event):

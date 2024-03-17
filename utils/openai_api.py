@@ -12,8 +12,8 @@ token_context_windows = {
 }
 
 class OpenAIAPI:
-    def __init__(self, model=gpt3, api_key=None, history_limit=10):
-        self.openai = OpenAI(api_key=api_key)
+    def __init__(self, model=gpt4, api_key=None, history_limit=10):
+        self.openai = OpenAI()
         self.model = model
         self.history = []
         self.history_limit = history_limit
@@ -47,23 +47,29 @@ class OpenAIAPI:
             total_tokens = num_tokens_from_messages(messages, model)
         return messages
 
-    def api_calls(self, user_message, sys_message, code_context=None):
-        if not isinstance(user_message, str) or not isinstance(sys_message, str):
-            raise ValueError("user_message and sys_message must be strings")
+    def api_calls(self, system_message, assistant_message, user_message, code_context=None):
+        if not isinstance(user_message, str) or not isinstance(system_message, str) or not isinstance(assistant_message, str):
+            raise ValueError("user_message, system_message, and assistant_message must be strings")
         
         relevant_history = self._get_relevant_history(user_message)
         
-        messages = [{"role": "system", "content": "You are a superintelligent being with perfect reasoning and planning and logic. You only do 1 task per response with your tools: web browser, shell commands, or task lists." + sys_message}, {"role": "user", "content": user_message}]
-        
+        messages = [
+            {"role": "system", "content": system_message},
+            {"role": "assistant", "content": assistant_message},
+            {"role": "user", "content": user_message}
+        ]
         
         messages.extend([{"role": role, "content": entry[role + '_message']} for entry in relevant_history for role in ["system", "user"] if role + '_message' in entry])
+        
+        if code_context:
+            messages.append({"role": "system", "content": f"Code context:\n{code_context}"})
         
         messages = self._ensure_token_limit(messages, self.model)
         
         try:
             response = self.openai.chat.completions.create(model=self.model, messages=messages, temperature=0)
             response_content = response.choices[0].message.content
-            self._add_to_history(user_message, sys_message, response_content)
+            self._add_to_history(user_message, system_message, response_content)
             return response_content
         except Exception as e:
             raise RuntimeError(f"Failed to make API call: {e}")
@@ -74,7 +80,7 @@ class OpenAIAPI:
     def search_history(self, keyword):
         return json.dumps(self._search_history(keyword), indent=4)
 
-def num_tokens_from_messages(messages, model="gpt-3.5-turbo-0613"):
+def num_tokens_from_messages(messages, model="gpt-4-0125-preview"):
     try:
         encoding = tiktoken.encoding_for_model(model)
     except KeyError:

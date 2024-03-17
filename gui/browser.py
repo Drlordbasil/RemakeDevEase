@@ -43,4 +43,4 @@ class Browser(QWidget):
     def scrape_page(self):
         self.get_page_source()
         self.execute_script("document.documentElement.outerHTML")
-        return self.page_source
+        return self.get_page_source
