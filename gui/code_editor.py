@@ -70,13 +70,17 @@ class CodeEditor(QWidget):
             with open(file_path, "r") as file:
                 self.editor.setPlainText(file.read())
                 
-    def save_file(self):
-        file_dialog = QFileDialog(self)
-        file_dialog.setNameFilter("Python Files (*.py)")
-        if file_dialog.exec_():
-            file_path = file_dialog.selectedFiles()[0]
-            with open(file_path, "w") as file:
-                file.write(self.editor.toPlainText())
+    def save_file(self, file_path=None):
+        if not file_path:
+            file_dialog = QFileDialog(self)
+            file_dialog.setNameFilter("Python Files (*.py)")
+            if file_dialog.exec_():
+                file_path = file_dialog.selectedFiles()[0]
+            else:
+                return
+        
+        with open(file_path, "w") as file:
+            file.write(self.editor.toPlainText())
                 
     def get_code(self):
         return self.editor.toPlainText()

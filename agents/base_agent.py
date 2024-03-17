@@ -12,11 +12,12 @@ class BaseAgent(ABC):
         self.api = OpenAIAPI()
         self.conversation_history = []
         self.current_task = None
-        self.knowledge_base = {}  # Initialize the knowledge_base as an empty dictionary
+        self.knowledge_base = {}
         self.browser = Browser()
         self.code_editor = CodeEditor()
         self.terminal = Terminal()
         self.task_list = TaskList()
+
     @abstractmethod
     def process_input(self, user_input):
         """
@@ -25,33 +26,7 @@ class BaseAgent(ABC):
         Args:
             user_input (str): The user input string.
         """
-        # Add the user input to the conversation history
-        self.conversation_history.append(f"User: {user_input}")
-
-        # Check if the user input is a task assignment
-        if user_input.lower().startswith("task:"):
-            self.current_task = user_input[5:].strip()
-            self.conversation_history.append(f"Assistant: Understood. The current task is: {self.current_task}")
-        else:
-            # If there is a current task, add it to the context
-            if self.current_task:
-                context = f"Current Task: {self.current_task}\n\n"
-            else:
-                context = ""
-
-            # Add the loaded knowledge base to the context
-            if self.knowledge_base:
-                knowledge_base_context = "\n".join([f"{key}: {value}" for key, value in self.knowledge_base.items()])
-                context += f"Knowledge Base:\n{knowledge_base_context}\n\n"
-
-            # Add the conversation history to the context
-            context += "\n".join(self.conversation_history[-5:])
-
-            # Call the OpenAI API to process the user input
-            response = self.api.api_calls(user_input, context)
-
-            # Add the assistant's response to the conversation history
-            self.conversation_history.append(f"Assistant: {response}")
+        pass
 
     @abstractmethod
     def generate_response(self):
@@ -61,10 +36,7 @@ class BaseAgent(ABC):
         Returns:
             str: The generated response.
         """
-        if self.conversation_history:
-            return self.conversation_history[-1][11:]  # Extract the assistant's response
-        else:
-            return "I'm ready to assist you. Please provide me with a task or query."
+        pass
 
     @abstractmethod
     def execute_action(self, action):
@@ -74,43 +46,7 @@ class BaseAgent(ABC):
         Args:
             action (str): The action to be executed.
         """
-        # Execute the action based on the generated response
-        if action.lower() == "clear":
-            self.conversation_history = []
-            self.current_task = None
-        elif action.lower() == "exit":
-            print("Exiting the program...")
-            exit()
-        else:
-            print(f"Executing action: {action}")
-
-            if "open website" in action.lower():
-                url = self.extract_url_from_action(action)
-                if url:
-                    self.browser.navigate_to(url)
-                else:
-                    print("No valid URL found in the action.")
-
-            elif "run command" in action.lower():
-                command = self.extract_command_from_action(action)
-                if command:
-                    self.terminal.execute_command(command)
-                else:
-                    print("No valid command found in the action.")
-
-            elif "add task" in action.lower():
-                task = self.extract_task_from_action(action)
-                if task:
-                    self.task_list.add_task(task)
-                else:
-                    print("No valid task found in the action.")
-
-            elif "write code" in action.lower():
-                code = self.extract_code_from_action(action)
-                if code:
-                    self.code_editor.set_code(code)
-                else:
-                    print("No valid code found in the action.")
+        pass
 
     def reset(self):
         """
@@ -119,6 +55,7 @@ class BaseAgent(ABC):
         self.conversation_history = []
         self.current_task = None
         self.knowledge_base = {}
+        print("Agent's internal state has been reset.")
 
     def load_knowledge_base(self, knowledge_base):
         """
@@ -132,9 +69,9 @@ class BaseAgent(ABC):
 
         self.knowledge_base = knowledge_base
 
-        # Update the conversation history to include the loaded knowledge base
         knowledge_base_context = "\n".join([f"{key}: {value}" for key, value in knowledge_base.items()])
         self.conversation_history.append(f"Assistant: Loaded knowledge base:\n{knowledge_base_context}")
+        print(f"Loaded knowledge base:\n{knowledge_base_context}")
 
     def save_state(self, file_path):
         """
@@ -151,6 +88,7 @@ class BaseAgent(ABC):
 
         with open(file_path, "wb") as f:
             pickle.dump(state, f)
+        print(f"Agent's state saved to {file_path}")
 
     def load_state(self, file_path):
         """
@@ -165,6 +103,12 @@ class BaseAgent(ABC):
         self.conversation_history = state["conversation_history"]
         self.current_task = state["current_task"]
         self.knowledge_base = state["knowledge_base"]
+        print(f"Agent's state loaded from {file_path}")
+
+    def get_task_list(self):
+        tasks = self.task_list.get_tasks()
+        print(f"Current task list: {tasks}")
+        return tasks
 
     def extract_url_from_action(self, action):
         url_pattern = re.compile(r'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\\(\\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+')
@@ -189,8 +133,7 @@ class BaseAgent(ABC):
             return match.group(1)
         else:
             return None
-    def get_task_list(self):
-        return self.task_list.get_tasks()
+
     def extract_code_from_action(self, action):
         code_pattern = re.compile(r'write code:\s*(.+)', re.IGNORECASE)
         match = code_pattern.search(action)
