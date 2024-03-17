@@ -1,6 +1,6 @@
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QLineEdit
 from PyQt5.QtWebEngineWidgets import QWebEngineView
-from PyQt5.QtCore import QUrl
+from PyQt5.QtCore import QUrl, QEventLoop
 
 class Browser(QWidget):
     def __init__(self):
@@ -25,6 +25,7 @@ class Browser(QWidget):
     def navigate_to(self, url):
         self.address_bar.setText(url)
         self.load_url()
+        self.wait_for_page_load()
         
     def execute_script(self, script):
         self.web_view.page().runJavaScript(script)
@@ -33,14 +34,24 @@ class Browser(QWidget):
         return self.web_view.url().toString()
     
     def get_page_source(self):
-        def callback(html):
-            self.page_source = html
-        self.web_view.page().toHtml(callback)
-        
+        loop = QEventLoop()
+        self.web_view.page().toHtml(lambda html: (setattr(self, 'page_source', html), loop.quit()))
+        loop.exec_()
+        return self.page_source
+    
     def search_text(self, text):
         self.web_view.page().findText(text)
         
     def scrape_page(self):
-        self.get_page_source()
-        self.execute_script("document.documentElement.outerHTML")
-        return self.get_page_source
+        return self.get_page_source()
+    
+    def wait_for_page_load(self, timeout=10000):
+        loop = QEventLoop()
+        self.web_view.loadFinished.connect(loop.quit)
+        loop.exec_()
+        
+    def log_message(self, message):
+        print(f"Browser: {message}")
+        
+    def handle_error(self, error_message):
+        self.log_message(f"Error: {error_message}")

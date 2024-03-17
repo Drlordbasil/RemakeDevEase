@@ -7,7 +7,7 @@ from gui.task_list import TaskList
 from gui.code_editor import CodeEditor
 
 class MainWindow(QMainWindow):
-    def __init__(self, agent):
+    def __init__(self):
         super().__init__()
         self.browser = Browser()
         self.terminal = Terminal()
